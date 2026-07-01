@@ -106,3 +106,8 @@ If the animation is slow, try lowering the node count:
 ```text
 http://localhost:8000/?n=60000
 ```
+
+## Contributors
+
+- Shreya Komarabattini
+- Claude Fable - experimental collaborator
