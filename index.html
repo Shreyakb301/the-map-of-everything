@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>THE MAP OF EVERYTHING</title>
+<style>
+  html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #ui{
+    position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at center,#04070f 0%,#000 75%);
+    color:#cfe3ff;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    transition:opacity 2.4s ease;z-index:10;cursor:pointer;user-select:none
+  }
+  #ui.gone{opacity:0;pointer-events:none}
+  #ui h1{
+    font-weight:200;font-size:clamp(17px,3.2vw,34px);letter-spacing:.55em;text-indent:.55em;
+    margin:0 0 14px;color:#e8f2ff;text-shadow:0 0 24px rgba(120,180,255,.45)
+  }
+  #ui p{font-weight:300;font-size:12px;letter-spacing:.34em;text-indent:.34em;opacity:.55;margin:0 0 64px}
+  #begin{
+    border:1px solid rgba(160,200,255,.35);background:none;color:#cfe3ff;
+    font-size:11px;letter-spacing:.45em;text-indent:.45em;padding:13px 34px 13px 40px;
+    cursor:pointer;transition:all .4s;font-family:inherit
+  }
+  #begin:hover{border-color:rgba(190,220,255,.9);box-shadow:0 0 30px rgba(120,180,255,.25);color:#fff}
+  #hint{position:absolute;bottom:26px;font-size:9.5px;letter-spacing:.22em;opacity:.30;font-weight:300}
+  #err{position:fixed;top:12px;left:12px;color:#f88;font:12px monospace;white-space:pre-wrap;z-index:20}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <h1>THE MAP OF EVERYTHING</h1>
+  <p>a living visualization of reality</p>
+  <button id="begin">BEGIN</button>
+  <div id="hint">space pause &nbsp;·&nbsp; &#8592;&#8594; skip &nbsp;·&nbsp; R reseed &nbsp;·&nbsp; F fullscreen &nbsp;·&nbsp; M mute</div>
+</div>
+<div id="err"></div>
+<script src="shaders.js"></script>
+<script src="graph.js"></script>
+<script src="audio.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
