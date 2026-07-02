@@ -8,15 +8,15 @@ This project was created as an experiment with Claude Fable.
 
 ## Demo
 
-![The Map of Everything start screen](/var/folders/tt/bzp628ss4pd612x84br1pl5r0000gn/T/TemporaryItems/NSIRD_screencaptureui_Fcue7A/Screenshot%202026-06-19%20at%201.34.16%E2%80%AFPM.png)
+![Early network growth](assets/demo/01-early-network.jpg)
 
-![Early network growth](/Users/shreyakb/Downloads/Screenshot%202026-06-19%20at%201.22.25%E2%80%AFPM.png)
+![Growing generated network](assets/demo/02-growing-network.jpg)
 
-![Dense generated network](/Users/shreyakb/Downloads/Screenshot%202026-06-19%20at%201.22.54%E2%80%AFPM.png)
+![Wide network field](assets/demo/03-wide-network-field.jpg)
 
-![Wide network field](/Users/shreyakb/Downloads/Screenshot%202026-06-19%20at%201.23.10%E2%80%AFPM.png)
+![Network flythrough](assets/demo/04-network-flythrough.jpg)
 
-![Expanded glowing network structure](/Users/shreyakb/Downloads/Screenshot%202026-06-19%20at%201.24.49%E2%80%AFPM.png)
+![Expanded glowing network](assets/demo/05-expanded-network.jpg)
 
 ## Quick Start
 
