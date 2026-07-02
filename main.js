@@ -15,39 +15,9 @@ const ERR = document.getElementById('err');
 const fail = m => { ERR.textContent += m + "\n"; };
 
 const canvas = document.getElementById('c');
-const qs = new URLSearchParams(location.search);
-const contextOptions = {antialias:false, alpha:false, powerPreference:'high-performance'};
-let contextError = '';
-canvas.addEventListener('webglcontextcreationerror', event => {
-  contextError = event.statusMessage || 'The browser could not create a graphics context.';
-});
-
-let gl = null;
-if(!qs.has('webgl1')&&!qs.has('canvas')){
-  gl = canvas.getContext('webgl2', contextOptions) || canvas.getContext('webgl2');
-}
-const WEBGL2 = !!gl;
-if(!gl&&!qs.has('canvas')){
-  gl = canvas.getContext('webgl', contextOptions) ||
-       canvas.getContext('webgl') ||
-       canvas.getContext('experimental-webgl');
-}
-if(!gl){
-  if(typeof startCanvasFallback==='function' && startCanvasFallback(canvas)) return;
-  fail('Graphics are unavailable. Enable hardware acceleration or open this page in a current browser.');
-  if(contextError) fail(contextError);
-  return;
-}
-
-const vaoExt = WEBGL2 ? null : gl.getExtension('OES_vertex_array_object');
-if(!WEBGL2 && !vaoExt){
-  fail('This browser does not support the vertex array extension required by the film.');
-  return;
-}
-const createVertexArray = () => WEBGL2 ? gl.createVertexArray() : vaoExt.createVertexArrayOES();
-const bindVertexArray = vao => WEBGL2 ? gl.bindVertexArray(vao) : vaoExt.bindVertexArrayOES(vao);
-
-const HDR = WEBGL2 && !!gl.getExtension('EXT_color_buffer_float');
+const gl = canvas.getContext('webgl2', {antialias:false, alpha:false, powerPreference:'high-performance'});
+if(!gl){ fail('WebGL2 is required for this film.'); return; }
+const HDR = !!gl.getExtension('EXT_color_buffer_float');
 const MAX_PT = Math.min(gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1] || 64, 110);
 
 // ---------- tiny math ----------
@@ -97,37 +67,16 @@ function spline(keys, t){
 }
 
 // ---------- GL helpers ----------
-function compatibleShader(type, src){
-  if(WEBGL2) return src;
-  let out = src
-    .replace(/^#version 300 es\s*/m,'')
-    .replace(/layout\s*\(location\s*=\s*\d+\)\s*in\b/g,'attribute');
-  if(type===gl.VERTEX_SHADER){
-    out = out.replace(/\bout\s+(?=(?:lowp\s+|mediump\s+|highp\s+)?(?:float|vec[234]|mat[234]))/g,'varying ');
-  }else{
-    out = out
-      .replace(/\bin\s+(?=(?:lowp\s+|mediump\s+|highp\s+)?(?:float|vec[234]|mat[234]))/g,'varying ')
-      .replace(/\bout\s+vec4\s+o\s*;/g,'')
-      .replace(/\bo\s*=/g,'gl_FragColor =')
-      .replace(/\btexture\s*\(/g,'texture2D(');
-  }
-  return out;
-}
 function compile(type, src){
   const s=gl.createShader(type);
-  const source=compatibleShader(type,src);
-  gl.shaderSource(s,source); gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) fail(gl.getShaderInfoLog(s)+'\n---\n'+source.split('\n').slice(0,6).join('\n'));
+  gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) fail(gl.getShaderInfoLog(s)+'\n---\n'+src.split('\n').slice(0,6).join('\n'));
   return s;
 }
 function program(vs, fs){
   const p=gl.createProgram();
   gl.attachShader(p,compile(gl.VERTEX_SHADER,vs));
   gl.attachShader(p,compile(gl.FRAGMENT_SHADER,fs));
-  if(!WEBGL2){
-    const attrs=vs.matchAll(/layout\s*\(location\s*=\s*(\d+)\)\s*in\s+\w+\s+(\w+)/g);
-    for(const attr of attrs) gl.bindAttribLocation(p,+attr[1],attr[2]);
-  }
   gl.linkProgram(p);
   if(!gl.getProgramParameter(p,gl.LINK_STATUS)) fail(gl.getProgramInfoLog(p));
   const u={}, n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
@@ -143,35 +92,35 @@ const Pbl  = program(VS_QUAD,  FS_BLUR);
 const Pcp  = program(VS_QUAD,  FS_COMP);
 
 // fullscreen quad
-const quadVAO = createVertexArray();
-bindVertexArray(quadVAO);
+const quadVAO = gl.createVertexArray();
+gl.bindVertexArray(quadVAO);
 const qb=gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER,qb);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1, 3,-1, -1,3]),gl.STATIC_DRAW);
 gl.enableVertexAttribArray(0);
 gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
-const dotVAO = createVertexArray();
+const dotVAO = gl.createVertexArray();   // attribute-less, uses gl_VertexID
 
 // graph buffers (rebuilt on reseed)
-const pointVAO=createVertexArray(), lineVAO=createVertexArray();
+const pointVAO=gl.createVertexArray(), lineVAO=gl.createVertexArray();
 const pointBuf=gl.createBuffer(), lineBuf=gl.createBuffer();
 let G=null;
 
 function uploadGraph(g){
   G=g;
-  bindVertexArray(pointVAO);
+  gl.bindVertexArray(pointVAO);
   gl.bindBuffer(gl.ARRAY_BUFFER,pointBuf);
   gl.bufferData(gl.ARRAY_BUFFER,g.pointData,gl.STATIC_DRAW);
   const PS=13*4;
   const pa=[[0,3,0],[1,3,3],[2,1,6],[3,1,7],[4,1,8],[5,1,9],[6,3,10]];
   for(const [loc,sz,of] of pa){ gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,PS,of*4); }
-  bindVertexArray(lineVAO);
+  gl.bindVertexArray(lineVAO);
   gl.bindBuffer(gl.ARRAY_BUFFER,lineBuf);
   gl.bufferData(gl.ARRAY_BUFFER,g.lineData,gl.STATIC_DRAW);
   const LS=14*4;
   const la=[[0,3,0],[1,3,3],[2,1,6],[3,1,7],[4,3,8],[5,1,11],[6,1,12],[7,1,13]];
   for(const [loc,sz,of] of la){ gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,LS,of*4); }
-  bindVertexArray(null);
+  gl.bindVertexArray(null);
 }
 
 // ---------- post-processing targets ----------
@@ -181,7 +130,7 @@ function makeFB(w,h){
   const tex=gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D,tex);
   if(HDR) gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,w,h,0,gl.RGBA,gl.HALF_FLOAT,null);
-  else    gl.texImage2D(gl.TEXTURE_2D,0,WEBGL2?gl.RGBA8:gl.RGBA,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  else    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
@@ -268,7 +217,7 @@ function drawLayer(vp, rot, scale, localT, motionT, alpha, maxPt){
     gl.uniform1f(P.u.uPointScale,H*0.5/Math.tan(FOV/2));
     gl.uniform1f(P.u.uAlpha,alpha);
     if(P.u.uMaxPt) gl.uniform1f(P.u.uMaxPt,maxPt);
-    bindVertexArray(vao);
+    gl.bindVertexArray(vao);
     gl.drawArrays(mode,0,count);
   }
 }
@@ -280,7 +229,7 @@ function post(prog, src, dst, setup){
   gl.bindTexture(gl.TEXTURE_2D,src.tex);
   gl.uniform1i(prog.u.uTex!==undefined?prog.u.uTex:prog.u.uScene,0);
   if(setup) setup(prog);
-  bindVertexArray(quadVAO);
+  gl.bindVertexArray(quadVAO);
   gl.drawArrays(gl.TRIANGLES,0,3);
 }
 
@@ -330,7 +279,7 @@ function frame(now){
     gl.uniform1f(Pdot.u.uSizeW,Math.max(550*s1,40));
     gl.uniform1f(Pdot.u.uMaxPt,18);
     gl.uniform1f(Pdot.u.uInt,dotI*(0.8+0.25*Math.sin(t*2.1)));
-    bindVertexArray(dotVAO);
+    gl.bindVertexArray(dotVAO);
     gl.drawArrays(gl.POINTS,0,1);
   }
   gl.disable(gl.BLEND);
@@ -354,7 +303,7 @@ function frame(now){
   gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,fbB2a.tex);  gl.uniform1i(Pcp.u.uB2,2);
   gl.uniform1f(Pcp.u.uT,t%97);
   gl.uniform1f(Pcp.u.uFade,fade);
-  bindVertexArray(quadVAO);
+  gl.bindVertexArray(quadVAO);
   gl.drawArrays(gl.TRIANGLES,0,3);
 
   Score.update(t,fade);
@@ -393,6 +342,7 @@ requestAnimationFrame(frame);
 
 // headless/test hook: ?auto=120 starts the film at t=120s without a click;
 // add &hold to freeze the clock exactly there
+const qs=new URLSearchParams(location.search);
 const autoQ=qs.get('auto');
 if(autoQ!==null){ begin(); t=Math.max(0,+autoQ||0); if(qs.get('hold')!==null) playing=false; }
 })();
