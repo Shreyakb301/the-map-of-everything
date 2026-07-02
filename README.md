@@ -2,7 +2,7 @@
 
 A browser-based generative film about networks, growth, collapse, and scale.
 
-The app renders a living 3D map in WebGL2, builds the network procedurally in JavaScript, and plays a matching ambient score with the Web Audio API. It has no build step and no external dependencies.
+The app renders a living 3D map with WebGL, builds the network procedurally in JavaScript, and plays a matching ambient score with the Web Audio API. It prefers WebGL2 and falls back to WebGL1 on compatible devices. It has no build step and no external dependencies.
 
 This project was created as an experiment with Claude Fable.
 
@@ -20,7 +20,7 @@ This project was created as an experiment with Claude Fable.
 
 ## Quick Start
 
-Open `index.html` in a modern browser that supports WebGL2.
+Open `index.html` in a modern browser that supports WebGL.
 
 For the most reliable local setup, serve the folder with any static file server:
 
@@ -98,7 +98,7 @@ Each structure is made by the same graph-generation system with different parame
 ## Requirements
 
 - A modern desktop browser
-- WebGL2 support
+- WebGL2 support, or WebGL1 with the `OES_vertex_array_object` extension
 - Audio starts only after the first user interaction, which is required by browser autoplay rules
 
 If the animation is slow, try lowering the node count:
