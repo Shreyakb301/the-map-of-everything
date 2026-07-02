@@ -2,7 +2,7 @@
 
 A browser-based generative film about networks, growth, collapse, and scale.
 
-The app renders a living 3D map with WebGL, builds the network procedurally in JavaScript, and plays a matching ambient score with the Web Audio API. It prefers WebGL2 and falls back to WebGL1 on compatible devices. It has no build step and no external dependencies.
+The app renders a living 3D map with WebGL, builds the network procedurally in JavaScript, and plays a matching ambient score with the Web Audio API. It prefers WebGL2, falls back to WebGL1 on compatible devices, and provides a lighter Canvas 2D experience when GPU rendering is unavailable. It has no build step and no external dependencies.
 
 This project was created as an experiment with Claude Fable.
 
@@ -94,11 +94,12 @@ Each structure is made by the same graph-generation system with different parame
 | `graph.js` | Procedural graph generation, regions, edges, node births, colors, and GPU buffers |
 | `shaders.js` | GLSL shader sources for points, lines, glow, bloom, and final composite |
 | `audio.js` | Generative ambient score using the Web Audio API |
+| `fallback.js` | Lightweight Canvas 2D renderer for browsers without WebGL |
 
 ## Requirements
 
 - A modern desktop browser
-- WebGL2 support, or WebGL1 with the `OES_vertex_array_object` extension
+- WebGL2 or WebGL1 for the full experience; Canvas 2D is used as a fallback
 - Audio starts only after the first user interaction, which is required by browser autoplay rules
 
 If the animation is slow, try lowering the node count:

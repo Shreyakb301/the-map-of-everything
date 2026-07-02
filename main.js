@@ -23,17 +23,18 @@ canvas.addEventListener('webglcontextcreationerror', event => {
 });
 
 let gl = null;
-if(!qs.has('webgl1')){
+if(!qs.has('webgl1')&&!qs.has('canvas')){
   gl = canvas.getContext('webgl2', contextOptions) || canvas.getContext('webgl2');
 }
 const WEBGL2 = !!gl;
-if(!gl){
+if(!gl&&!qs.has('canvas')){
   gl = canvas.getContext('webgl', contextOptions) ||
        canvas.getContext('webgl') ||
        canvas.getContext('experimental-webgl');
 }
 if(!gl){
-  fail('WebGL is unavailable. Enable hardware acceleration or open this page in a current version of Chrome, Edge, Firefox, or Safari.');
+  if(typeof startCanvasFallback==='function' && startCanvasFallback(canvas)) return;
+  fail('Graphics are unavailable. Enable hardware acceleration or open this page in a current browser.');
   if(contextError) fail(contextError);
   return;
 }
